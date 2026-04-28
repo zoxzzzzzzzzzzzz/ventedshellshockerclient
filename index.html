@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Vented Client | shellshockers</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg:#0f1117;
+  --dock:#1c1f2b;
+  --btn:#2c3142;
+  --text:#00ffcc;
+}
+
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:monospace;
+  overflow:hidden;
+}
+
+#start {
+  position:fixed;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  background:#000;
+  z-index:10;
+}
+
+#ascii {
+  white-space:pre;
+  text-align:center;
+  font-size:14px;
+  line-height:1.2;
+  text-shadow:0 0 10px #00ffcc;
+}
+
+#boot {
+  margin-top:20px;
+  font-size:14px;
+}
+
+#wrap {
+  position:fixed;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+iframe {
+  width:100vw;
+  height:100vh;
+  border:none;
+  transform-origin:center;
+}
+
+#dock {
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--dock);
+  padding:12px;
+  border-radius:40px;
+  display:flex;
+  gap:10px;
+  z-index:20;
+}
+
+button {
+  border:none;
+  padding:10px 14px;
+  border-radius:999px;
+  background:var(--btn);
+  color:white;
+  cursor:pointer;
+}
+
+#crosshair {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:30;
+}
+.cross-part {
+  position:absolute;
+  animation:pulse 1s infinite alternate;
+}
+@keyframes pulse {
+  from { opacity:0.5; }
+  to { opacity:1; }
+}
+
+#hit {
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:40px;
+  opacity:0;
+}
+.show {
+  animation:hit .25s;
+}
+@keyframes hit {
+  0% { opacity:1; transform:scale(1); }
+  100% { opacity:0; transform:scale(1.5); }
+}
+
+#panel {
+  position:fixed;
+  bottom:90px;
+  left:50%;
+  transform:translateX(-50%);
+  display:none;
+}
+textarea {
+  width:260px;
+  height:80px;
+  border-radius:10px;
+  background:#111;
+  color:white;
+  border:none;
+  padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="start">
+<pre id="ascii"></pre>
+<div id="boot"></div>
+</div>
+
+<div id="wrap">
+  <iframe id="game"></iframe>
+</div>
+
+<div id="crosshair"></div>
+<div id="hit">✖</div>
+
+<div id="panel">
+  <textarea id="jsonInput" placeholder='{"size":20,"thickness":3,"gap":6,"color":"white"}'></textarea>
+</div>
+
+<div id="dock" style="display:none;">
+  <button onclick="toggleFullscreen()">Fullscreen</button>
+  <button onclick="reloadGame()">Reload</button>
+
+  <button onclick="setStretch('normal')">Normal</button>
+  <button onclick="setStretch('4:3')">4:3</button>
+  <button onclick="setStretch('wide')">Wide</button>
+
+  <button onclick="preset('dot')">Dot</button>
+  <button onclick="preset('classic')">Classic</button>
+  <button onclick="applyJSON()">Apply</button>
+
+  <button onclick="togglePanel()">Config</button>
+</div>
+
+<script>
+const asciiText = `
+██╗   ██╗███████╗███╗   ██╗████████╗███████╗██████╗ 
+██║   ██║██╔════╝████╗  ██║╚══██╔══╝██╔════╝██╔══██╗
+██║   ██║█████╗  ██╔██╗ ██║   ██║   █████╗  ██║  ██║
+╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║   ██╔══╝  ██║  ██║
+ ╚████╔╝ ███████╗██║ ╚████║   ██║   ███████╗██████╔╝
+  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝╚═════╝
+`;
+
+const bootLines = [
+  "booting vented client...",
+  "loading modules...",
+  "injecting interface...",
+  "ready."
+];
+
+let i=0, j=0;
+
+function typeAscii(){
+  if(i < asciiText.length){
+    ascii.innerHTML += asciiText[i];
+    i++;
+    setTimeout(typeAscii, 5);
+  } else {
+    bootSequence();
+  }
+}
+
+function bootSequence(){
+  if(j < bootLines.length){
+    boot.innerHTML += bootLines[j] + "<br>";
+    j++;
+    setTimeout(bootSequence, 400);
+  } else {
+    setTimeout(startGame, 500);
+  }
+}
+
+function startGame(){
+  start.style.display="none";
+  game.src="https://shellshock.io/";
+  dock.style.display="flex";
+  preset("classic");
+
+  new Audio("https://www.soundjay.com/button/beep-07.wav").play();
+}
+
+function toggleFullscreen(){
+  if(!document.fullscreenElement){
+    document.documentElement.requestFullscreen();
+  } else document.exitFullscreen();
+}
+
+function reloadGame(){
+  game.src = game.src;
+}
+
+function setStretch(m){
+  if(m==="4:3") game.style.transform="scale(1.3,1)";
+  else if(m==="wide") game.style.transform="scale(1.6,1)";
+  else game.style.transform="scale(1,1)";
+}
+
+function create(c){
+  crosshair.innerHTML="";
+  let s=c.size||20,t=c.thickness||3,g=c.gap||6,col=c.color||"white";
+
+  part(0,-(g+s),t,s);
+  part(0,g,t,s);
+  part(-(g+s),0,s,t);
+  part(g,0,s,t);
+
+  function part(x,y,w,h){
+    let d=document.createElement("div");
+    d.className="cross-part";
+    d.style.width=w+"px";
+    d.style.height=h+"px";
+    d.style.background=col;
+    d.style.transform=`translate(${x}px,${y}px)`;
+    crosshair.appendChild(d);
+  }
+}
+
+function preset(t){
+  if(t==="dot") create({size:2,gap:0,color:"red"});
+  if(t==="classic") create({size:20,gap:6});
+}
+
+function applyJSON(){
+  try{ create(JSON.parse(jsonInput.value)); }
+  catch{ alert("bad json"); }
+}
+
+function togglePanel(){
+  panel.style.display = panel.style.display==="none" ? "block" : "none";
+}
+
+document.addEventListener("click",()=>{
+  hit.classList.add("show");
+  setTimeout(()=>hit.classList.remove("show"),200);
+});
+
+let drag=false,ox=0,oy=0;
+dock.onmousedown=e=>{
+  drag=true;
+  let r=dock.getBoundingClientRect();
+  ox=e.clientX-r.left;
+  oy=e.clientY-r.top;
+};
+document.onmousemove=e=>{
+  if(drag){
+    dock.style.left=(e.clientX-ox)+"px";
+    dock.style.top=(e.clientY-oy)+"px";
+    dock.style.transform="none";
+  }
+};
+document.onmouseup=()=>drag=false;
+let hidden=false;
+document.addEventListener("keydown",e=>{
+  if(e.key.toLowerCase()==="h"){
+    hidden=!hidden;
+    dock.style.display = hidden?"none":"flex";
+    panel.style.display = hidden?"none":"block";
+    crosshair.style.display = hidden?"none":"block";
+  }
+});
+
+typeAscii();
+</script>
+
+</body>
+</html>
